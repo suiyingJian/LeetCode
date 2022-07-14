@@ -1,4 +1,4 @@
-/**Remove Element
+/**移除元素Remove Element
  * @param {number[]} nums
  * @param {number} val
  * @return {number}

@@ -40,7 +40,7 @@ function ListNode(val) {
 - 插入指定位置之前
 - 删除结点
 
-下面以 LeetCode 的707题《设计链表》为例，来实现一下单链表，题目要求将这 6 种基本的操作加以实现：注释中的 /code here/ 部分是填写相应的 6 种功能代码：
+> 下面以 LeetCode 的707题《设计链表》为例，来实现一下单链表，题目要求将这 6 种基本的操作加以实现：注释中的 /code here/ 部分是填写相应的 6 种功能代码：
 
 ```
 var MyLinkedList = function() {
@@ -101,3 +101,449 @@ MyLinkedList.prototype.deleteAtIndex = function(index) {
 };
 
 ```
+
+#### （1）链表初始化
+初始化假头链表，首先需要 new 出一个链表结点，并且让链表的 dummy 和 tail 指针都指向它，代码如下：
+```
+var listNode = function(val) {
+    this.val = val
+    this.next = null
+}
+
+var MyLinkedList = function() {
+    this.dummy = new listNode()
+    this.tail = this.dummy
+    this.length = 0
+}
+```
+初始化完成后，链表已经有了一个结点，但是此时，整个链表中还没有任何数据。因此，对于一个空链表，就是指已经初始化好的带假头链表。
+虽然 head 和 tail 初始化完成之后，都指向null。但是这两者有一个特点，叫“动静结合”：
+
+静：head 指针初始化好以后，永远都是静止的，再也不会动了。
+动：tail 指针在链表发生变动的时候，就需要移动调整。
+
+#### （2）尾部追加结点
+尾部添加新结点操作只有两步，代码如下：
+```
+MyLinkedList.prototype.addAtTail = function(val) {
+    <!-- 尾部添加一个新结点 -->
+    this.tail.next = new listNode(val)
+    //移动tail指针
+    this.tail = this.tail.next
+    //链表长度+1
+    this.length ++
+}
+```
+带假头的链表初始化之后，可以保证 tail 指针永远非空，因此，也就可以直接去修改 tail.next 指针，省略掉了关于 tail 指针是否为空的判断。
+
+#### （3）头部插入结点
+需要插入的新结点为 p，插入之后，新结点 p 会成为第一个有意义的数据结点。通过以下 3 步可以完成头部插入：
+
+新结点 p.next 指向 dummy.next；
+dummy.next 指向 p；
+如果原来的 tail 指向 dummy，那么将 tail 指向 p。
+
+对应的代码如下：
+
+```
+MyLinkedList.prototype.addAtHead = function(val) {
+    // 生成一个结点，存放的值为val
+    const p = new listNode(val)
+    // 将p.next指向第一个结点
+    p.next = this.dummy.next;
+    // dummy.next指向新结点，使之变成第一个结点
+    this.dummy.next = p;
+    // 注意动静结合原则，添加结点时，注意修改tail指针。
+    if (this.tail == this.dummy) {
+      this.tail = p;
+    }
+    // 链表长度+1
+    this.length ++
+};
+
+```
+这段代码有趣的地方在于，当链表为空的时候，它依然是可以工作的。因为虽然链表是空的，但是由于有 dummy 结点的存在，代码并不会遇到空指针。
+注意： 如果链表添加了结点，或者删除了结点，一定要记得修改 tail 指针。如果忘了修改，那么就不能正确地获取链表的尾指针，从而错误地访问链表中的数据。
+
+#### （4）查找结点
+在查找索引值为 index（假设 index 从 0 开始）的结点时，你需要注意，大多数情况下，返回指定结点前面的一个结点 prev 更加有用。好处有以下两个方面：
+
+通过 prev.next 就可以访问到想要找到的结点，如果没有找到，那么 prev.next 为 null；
+通过 prev 可以方便完成后续操作，比如在 target 前面 insert 一个新结点，或者将 target 结点从链表中移出去。
+
+因此，如果要实现 get 函数，应该先实现一个 getPrevNode 函数：
+
+```
+MyLinkedList.prototype.getPreNode = function(index) {
+    if (index < 0 || index >= this.length) {
+      return -1;
+    }
+    // 初始化front与back，分别一前一后
+    let front = this.dummy.next
+    let back = this.dummy
+    // 在查找的时候，front与back总是一起走
+    for (let i = 0; i < index && front != null; i++) {
+      back = front;
+      front = front.next;
+    }
+    // 把back做为prev并且返回
+    return back
+};
+```
+
+有了假头的帮助，这段查找代码就非常健壮了，可以处理以下 2 种情况：
+
+如果 target 在链表中不存在，此时 prev 返回链表的最后一个结点；
+如果为空链表（空链表指只有一个假头的链表），此时 prev 指向 dummy。也就是说，返回的 prev 指针总是有效的。
+
+借助 getPrevNode 函数来实现 get 函数：
+
+```
+MyLinkedList.prototype.get = function(index) {
+    // 获取链表中第 index 个结点的值。如果索引无效，则返回-1。
+    // index从0开始
+    if (index < 0 || index >= this.length) {
+      return -1;
+    }
+    // 因为getPrevNode总是返回有效的结点，所以可以直接取值。
+    return this.getPreNode(index).next.val
+};
+```
+（5）插入指定位置之前
+插入指定位置的前面，有 4 个需求。
+
+如果 index 大于链表长度，则不会插入结点。
+如果 index 等于链表的长度，则该结点将附加到链表的末尾。
+如果 index 小于 0，则在头部插入结点。
+否则在指定位置前面插入结点。
+
+其中，Case 1~3 较容易处理。可以直接写。重点在于 Case 4。现在已经有了 getPrevNode() 函数，就可以比较容易地写出 Case 4 的代码，思路如下：
+
+使用 getPrevNode() 函数拿到 index 之前的结点 pre；
+在 pre 的后面添加一个新结点。
+
+以下是具体的 Case 1~4 的操作过程：
+
+```
+MyLinkedList.prototype.addAtIndex = function(index, val) {
+  if (index > this.length) {
+    // Case 1.如果 index 大于链表长度，则不会插入结点。
+    return;
+  } else if (index == this.length) {
+    // Case 2.如果 index 等于链表的长度，则该结点将附加到链表的末尾。
+    this.addAtTail(val);
+  } else if (index <= 0) {
+    // Case 3. 如果index小于0，则在头部插入结点。
+    this.addAtHead(val);
+  } else {
+    // Case 4.
+    // 得到index之前的结点pre
+    const pre = this.getPreNode(index);
+    // 在pre的后面添加新结点
+    const p = new listNode(val);
+    p.next = pre.next;
+    pre.next = p;
+    // 链表长度+1
+    this.length++;
+  }
+};
+```
+
+（6）删除节点
+删除结点操作是给定要删除的下标 index（下标从 0 开始），删除的情况分 2 种：
+
+如果 index 无效，那么什么也不做；
+如果 index 有效，那么将这个结点删除。
+
+上面这 2 种情况中，Case 1 比较容易处理，相对要麻烦一些的是 Case 2。要删除 index 结点，最好是能找到它前面的结点。有了前面的结点，再删除后面的结点就容易多了。不过已经有了 getPrevNode 函数，所以操作起来还是很简单的。
+以下是具体的操作过程
+
+```
+MyLinkedList.prototype.deleteAtIndex = function(index) {
+  // Case 1. 如果index无效，那么什么也不做。
+  if (index < 0 || index >= this.length) {
+    return;
+  }
+  // Case 2. 删除index结点
+  // step 1. 找到index前面的结点
+  const pre = this.getPreNode(index);
+  // step 2. 如果要删除的是最后一个结点，那么需要更改tail指针
+  if (this.tail == pre.next) {
+    this.tail = pre;
+  }
+  // step. 3 进行删除操作。并修改链表长度。
+  pre.next = pre.next.next;
+  this.length--;
+};
+```
+（7）总结
+使用哑结点来实现链表的总代码如下：    
+
+```
+        /**
+* Initialize your data structure here.
+*/
+var listNode = function(val) {
+    this.val = val
+    this.next = null
+};
+
+var MyLinkedList = function() {
+    this.dummy = new listNode()
+    this.tail = this.dummy
+    this.length = 0
+};
+
+
+/**
+* Get the value of the index-th node in the linked list. If the index is invalid, return -1. 
+* @param {number} index
+* @return {number}
+*/
+MyLinkedList.prototype.getPreNode = function(index) {
+    if (index < 0 || index >= this.length) {
+      return -1;
+    }
+    // 初始化front与back，分别一前一后
+    let front = this.dummy.next
+    let back = this.dummy
+    // 在查找的时候，front与back总是一起走
+    for (let i = 0; i < index && front != null; i++) {
+      back = front;
+      front = front.next;
+    }
+    // 把back做为prev并且返回
+    return back
+};
+
+MyLinkedList.prototype.get = function(index) {
+    if (index < 0 || index >= this.length) {
+      return -1;
+    }
+    
+    return this.getPreNode(index).next.val
+};
+
+/**
+* Add a node of value val before the first element of the linked list. After the insertion, the new node will be the first node of the linked list. 
+* @param {number} val
+* @return {void}
+*/
+MyLinkedList.prototype.addAtHead = function(val) {
+    // 生成一个结点，存放的值为val
+    const p = new listNode(val)
+    // 将p.next指向第一个结点
+    p.next = this.dummy.next;
+    // dummy.next指向新结点，使之变成第一个结点
+    this.dummy.next = p;
+    // 注意动静结合原则，添加结点时，注意修改tail指针。
+    if (this.tail == this.dummy) {
+      this.tail = p;
+    }
+    // 链表长度+1
+    this.length ++
+};
+
+/**
+* Append a node of value val to the last element of the linked list. 
+* @param {number} val
+* @return {void}
+*/
+MyLinkedList.prototype.addAtTail = function(val) {
+    // 尾部添加一个新结点
+    this.tail.next = new listNode(val)
+    // 移动tail指针
+    this.tail = this.tail.next;
+    // 链表长度+1
+    this.length ++
+};
+
+/**
+* Add a node of value val before the index-th node in the linked list. If index equals to the length of linked list, the node will be appended to the end of linked list. If index is greater than the length, the node will not be inserted. 
+* @param {number} index 
+* @param {number} val
+* @return {void}
+*/
+MyLinkedList.prototype.addAtIndex = function(index, val) {
+  if (index > this.length) {
+    // Case 1.如果 index 大于链表长度，则不会插入结点。
+    return;
+  } else if (index == this.length) {
+    // Case 2.如果 index 等于链表的长度，则该结点将附加到链表的末尾。
+    this.addAtTail(val);
+  } else if (index <= 0) {
+    // Case 3. 如果index小于0，则在头部插入结点。
+    this.addAtHead(val);
+  } else {
+    // Case 4.
+    // 得到index之前的结点pre
+    const pre = this.getPreNode(index);
+    // 在pre的后面添加新结点
+    const p = new listNode(val);
+    p.next = pre.next;
+    pre.next = p;
+    // 链表长度+1
+    this.length++;
+  }
+};
+
+/**
+* Delete the index-th node in the linked list, if the index is valid. 
+* @param {number} index
+* @return {void}
+*/
+  
+  
+MyLinkedList.prototype.deleteAtIndex = function(index) {
+  // Case 1. 如果index无效，那么什么也不做。
+  if (index < 0 || index >= this.length) {
+    return;
+  }
+  // Case 2. 删除index结点
+  // step 1. 找到index前面的结点
+  const pre = this.getPreNode(index);
+  // step 2. 如果要删除的是最后一个结点，那么需要更改tail指针
+  if (this.tail == pre.next) {
+    this.tail = pre;
+  }
+  // step. 3 进行删除操作。并修改链表长度。
+  pre.next = pre.next.next;
+  this.length--;
+};
+
+/** 
+* Your MyLinkedList object will be instantiated and called as such:
+* var obj = new MyLinkedList()
+* var param_1 = obj.get(index)
+* obj.addAtHead(val)
+* obj.addAtTail(val)
+* obj.addAtIndex(index,val)
+* obj.deleteAtIndex(index)
+*/
+```
+
+如果不使用哑结点，而直接初始化head，代码如下：
+
+```
+/**
+ * Initialize your data structure here.
+ */
+var MyLinkedList = function() {
+  this.head=null
+  this.rear=null
+  this.len=0
+};
+function ListNode(val) {
+  this.val = val;
+  this.next = null;
+}
+/**
+ * Get the value of the index-th node in the linked list. If the index is invalid, return -1. 
+ * @param {number} index
+ * @return {number}
+ */
+MyLinkedList.prototype.get = function(index) {
+  if(index<0||index>this.len-1)
+    return -1
+  var node=this.head
+  while(index-->0){
+    if(node.next==null)
+      return -1
+    node=node.next
+  }
+  return node.val
+};
+
+/**
+ * Add a node of value val before the first element of the linked list. After the insertion, the new node will be the first node of the linked list. 
+ * @param {number} val
+ * @return {void}
+ */
+MyLinkedList.prototype.addAtHead = function(val) {
+  var node=new ListNode(val)
+  if(this.head==null)
+    this.rear=node
+  else
+    node.next=this.head
+  this.head=node
+  this.len++
+};
+
+/**
+ * Append a node of value val to the last element of the linked list. 
+ * @param {number} val
+ * @return {void}
+ */
+MyLinkedList.prototype.addAtTail = function(val) {
+  var node=new ListNode(val)
+  if(this.head==null)
+    this.head=node
+  else
+    this.rear.next=node
+  this.rear=node
+  this.len++
+};
+
+/**
+ * Add a node of value val before the index-th node in the linked list. If index equals to the length of linked list, the node will be appended to the end of linked list. If index is greater than the length, the node will not be inserted. 
+ * @param {number} index 
+ * @param {number} val
+ * @return {void}
+ */
+MyLinkedList.prototype.addAtIndex = function(index, val) {
+  if(index<=0)
+    return this.addAtHead(val)
+  if(this.len<index)
+    return
+  if(index==this.len)
+    return this.addAtTail(val)
+  var node=this.head
+  while(index-->1){
+    node=node.next
+  }
+    
+  var newnode=new ListNode(val)
+  newnode.next=node.next
+  node.next=newnode
+  this.len++
+};
+
+/**
+ * Delete the index-th node in the linked list, if the index is valid. 
+ * @param {number} index
+ * @return {void}
+ */
+MyLinkedList.prototype.deleteAtIndex = function(index) {
+  if(index<0||index>this.len-1||this.len==0)
+    return
+  if(index==0){
+    this.head=this.head.next
+    this.len--
+    return
+  }
+
+  var node=this.head
+  var myindex=index
+  while(index-->1){
+    node=node.next
+  }
+  if(myindex==(this.len-1)){
+    this.rear=node
+  }
+  node.next=node.next.next
+  this.len--
+};
+
+/**
+ * Your MyLinkedList object will be instantiated and called as such:
+ * var obj = new MyLinkedList()
+ * var param_1 = obj.get(index)
+ * obj.addAtHead(val)
+ * obj.addAtTail(val)
+ * obj.addAtIndex(index,val)
+ * obj.deleteAtIndex(index)
+ */
+```
+
+> 这两段代码一对比就能看出来，使用哑结点会简洁很多。
+
