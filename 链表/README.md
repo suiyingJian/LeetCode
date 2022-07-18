@@ -1,3 +1,18 @@
+原型链简介
+原型链本质是链表
+原型链上的节点是各种原型对象，比如：Function.prototype  、Object.prototype 、Array.prototype
+所谓原型对象就是指类的prototype属性值
+原型链通过__ proto __属性连接各种原型对象
+
+对于一个对象来说 它的原型链： obj -> Object.prototype -> null
+对于一个函数来说 它的原型链： func -> Function.prototype  -> Object.prototype -> null
+对于一个数组来说 它的原型链： arr -> Array.prototype  -> Object.prototype -> null
+
+如果A 沿着原型链能找到 B.prototype , 那么A instanceof B 为true
+如果在A对象上没有找到x属性 ，那么就会沿着原型链找x属性。
+实现instanceof
+
+
 ### 一、链表的概念
 （1）链表的结构
 在计算机里，不保存在连续存储空间中，而每一个元素里都保存了到下一个元素的地址的数据结构，我们称之为链表（Linked List）。链表上的每一个元素又可以称它为节点（Node），而链表中第一个元素，称它为头节点（Head Node），最后一个元素称它为尾节点（Tail Node）。
