@@ -86,7 +86,7 @@ const arr10 = [1, 2, 3, 4, 5]
 console.log(arr.slice(1, 4));    //[2,3,4]
 console.log(arr);   //[1, 2, 3, 4, 5]
 
-// 11.splice(start,deleteCount,ite,1mite,2.......)
+// 11.splice(start,deleteCount,items,.......)
 /**
  * start参数  开始的位置
  * deleteCount  要截取的个数
