@@ -565,6 +565,7 @@ MyLinkedList.prototype.deleteAtIndex = function(index) {
  */
 ```
 
+
 > 这两段代码一对比就能看出来，使用哑结点会简洁很多。
 
 （1）141 环形链表   
