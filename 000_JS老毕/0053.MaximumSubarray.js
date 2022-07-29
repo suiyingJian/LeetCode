@@ -11,14 +11,14 @@ var maxSubArray = function(nums) {
   memo[0] = nums[0]
   let max = nums[0]
 
+  if (nums.length === 1) return nums[0];
+  
   for (let i = 1; i < nums.length; i++) {
-    memo[i] = Math.max(nums[i] + memo[i - 1], nums[i])
-    max = Math.max(max,memo[i])
+    memo[i] = Math.max(memo[i - 1] + nums[i], nums[i])
+    //比较 当前数组元素，和现在新memo里数组哪个大
+    
+    max = Math.max(max, memo[i])
+    // 记录最大值
   }
-
-  // for (let i = 1; i < memo.length; i++){
-  //   max = Math.max(max,memo[i])
-  // }
-
-  return max;
+  return max
 };
