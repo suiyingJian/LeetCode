@@ -8,6 +8,7 @@ var longestPalindrome = function (s) {
 
   function expandAroundCenter(left, right) {
     while (left >= 0 && right < s.length && s[left] === s[right]) {
+      //[a,b,a] 以b为中心 即right 2-0 +1
       if (right - left + 1 > maxLength) {
         maxLength = right - left + 1;
         start = left;
