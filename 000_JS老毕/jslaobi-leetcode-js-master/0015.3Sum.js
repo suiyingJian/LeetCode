@@ -1,5 +1,7 @@
 var threeSum = function (nums) {
   const result = [];
+
+  //从小到大排序
   nums.sort(function (a, b) {
     return a - b;
   });
